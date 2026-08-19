@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Ledo — Mission Survey!</title>
+<style>
+  :root{
+    --bg1:#0d1b2a;
+    --bg2:#132a3f;
+    --panel:#14273d;
+    --panel-light:#1c3a57;
+    --accent:#2f6fed;
+    --accent2:#ffb200;
+    --accent3:#ff6a3d;
+    --pink:#2f6fed;
+    --text:#eaf2ff;
+    --muted:#9fb3c8;
+    --good:#3ecf8e;
+    --warn:#ff6a3d;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+    background: radial-gradient(ellipse at top, #16324f 0%, var(--bg1) 55%, #060d16 100%);
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  #stars{ position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+
+  .wrap{
+    position:relative;
+    z-index:2;
+    max-width:720px;
+    margin:0 auto;
+    padding:24px 16px 60px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* HUD */
+  .hud{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .hud-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    font-size:1.1rem;
+    letter-spacing:0.5px;
+  }
+  .hud-title .bot{ font-size:1.8rem; filter: drop-shadow(0 0 8px var(--accent)); }
+  .stars-count{
+    background:linear-gradient(135deg, var(--accent3), #ff8a3d);
+    color:#25130a;
+    font-weight:800;
+    padding:8px 14px;
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    box-shadow:0 4px 14px rgba(255,184,77,0.35);
+    font-size:0.95rem;
+    white-space:nowrap;
+  }
+
+  /* progress track = rocket path */
+  .track-outer{
+    position:relative;
+    height:34px;
+    background:rgba(255,255,255,0.06);
+    border-radius:999px;
+    margin-bottom:6px;
+    overflow:visible;
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .track-fill{
+    height:100%;
+    width:0%;
+    border-radius:999px;
+    background:linear-gradient(90deg, var(--accent2), var(--accent));
+    transition:width .5s cubic-bezier(.2,.9,.3,1.3);
+  }
+  .rocket{
+    position:absolute;
+    top:50%;
+    left:0%;
+    transform:translate(-50%,-50%);
+    font-size:1.6rem;
+    transition:left .5s cubic-bezier(.2,.9,.3,1.3);
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.5));
+  }
+  .track-label{
+    text-align:center;
+    font-size:0.8rem;
+    color:var(--muted);
+    margin-top:8px;
+    margin-bottom:16px;
+  }
+
+  /* zone pips */
+  .zone-pips{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .zone-pip{
+    font-size:1.1rem;
+    opacity:0.3;
+    transition:opacity .3s, transform .3s;
+    filter:grayscale(1);
+  }
+  .zone-pip.done{ opacity:1; filter:grayscale(0); transform:scale(1.15); }
+  .zone-pip.current{ opacity:1; filter:grayscale(0); transform:scale(1.3); }
+
+  /* card */
+  .card{
+    background:linear-gradient(160deg, var(--panel), var(--panel-light));
+    border-radius:24px;
+    padding:30px 24px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.07);
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-height:420px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    top:-60px; right:-60px;
+    width:180px; height:180px;
+    background:radial-gradient(circle, rgba(139,107,255,0.35), transparent 70%);
+    pointer-events:none;
+  }
+
+  .screen{ display:none; animation:fadeIn .45s ease; }
+  .screen.active{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  /* intro */
+  .mega-bot{ font-size:5rem; animation:float 3s ease-in-out infinite; filter:drop-shadow(0 0 20px var(--accent)); }
+  @keyframes float{ 0%,100%{ transform:translateY(0) rotate(-3deg);} 50%{ transform:translateY(-14px) rotate(3deg);} }
+  h1{ font-size:1.7rem; margin:4px 0 0; background:linear-gradient(90deg,var(--accent2),var(--pink)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .subtitle{ color:var(--muted); font-size:0.98rem; line-height:1.5; max-width:480px; }
+
+  .field{ width:100%; max-width:380px; text-align:left; margin-top:6px; }
+  .field label{ display:block; font-size:0.85rem; color:var(--muted); margin-bottom:6px; font-weight:700; }
+  .field input[type=text]{
+    width:100%;
+    padding:14px 16px;
+    border-radius:14px;
+    border:2px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.06);
+    color:var(--text);
+    font-size:1rem;
+    outline:none;
+    transition:border .2s, transform .2s;
+  }
+  .field input[type=text]:focus{ border-color:var(--accent2); transform:scale(1.02); }
+
+  .chip-row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:6px; }
+  .chip{
+    padding:10px 18px;
+    border-radius:999px;
+    border:2px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05);
+    color:var(--text);
+    cursor:pointer;
+    font-weight:700;
+    font-size:0.9rem;
+    transition:transform .15s, background .15s, border-color .15s;
+    user-select:none;
+  }
+  .chip:hover{ transform:translateY(-2px) scale(1.04); }
+  .chip.selected{
+    background:linear-gradient(135deg, var(--accent2), var(--accent));
+    border-color:transparent;
+    color:#0b1030;
+    box-shadow:0 6px 16px rgba(63,214,192,0.35);
+  }
+
+  .btn{
+    border:none;
+    cursor:pointer;
+    font-weight:800;
+    font-size:1rem;
+    padding:14px 30px;
+    border-radius:999px;
+    background:linear-gradient(135deg, var(--accent3), var(--accent));
+    color:white;
+    box-shadow:0 10px 24px rgba(47,111,237,0.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+    margin-top:10px;
+  }
+  .btn:hover{ transform:translateY(-3px) scale(1.03); box-shadow:0 14px 30px rgba(47,111,237,0.45); }
+  .btn:active{ transform:translateY(0) scale(0.98); }
+  .btn.secondary{
+    background:rgba(255,255,255,0.08);
+    box-shadow:none;
+    border:2px solid rgba(255,255,255,0.15);
+  }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  /* zone transition */
+  .zone-emoji{ font-size:4.4rem; animation:float 2.6s ease-in-out infinite; }
+  .zone-kicker{ font-size:0.8rem; font-weight:800; color:var(--accent2); text-transform:uppercase; letter-spacing:1.5px; }
+  .zone-title{ font-size:1.5rem; font-weight:900; margin:2px 0 0; }
+  .zone-tagline{ color:var(--muted); font-size:0.95rem; max-width:420px; }
+  .zone-count{ font-size:0.8rem; color:var(--muted); }
+
+  /* question screen */
+  .q-index{
+    font-size:0.8rem;
+    font-weight:800;
+    color:var(--accent2);
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+  }
+  .q-planet{ font-size:2.6rem; margin-bottom:-6px; }
+  .q-text{ font-size:1.25rem; font-weight:700; line-height:1.4; max-width:480px; }
+
+  .scale{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:10px;
+    width:100%;
+  }
+  .face-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,255,255,0.05);
+    border:2px solid rgba(255,255,255,0.1);
+    border-radius:18px;
+    padding:12px 10px;
+    width:88px;
+    cursor:pointer;
+    transition:transform .15s, background .15s, border-color .15s;
+  }
+  .face-btn .emoji{ font-size:2.1rem; transition:transform .2s; }
+  .face-btn span.lbl{ font-size:0.68rem; color:var(--muted); font-weight:700; line-height:1.2; }
+  .face-btn:hover{ transform:translateY(-4px) scale(1.05); background:rgba(255,255,255,0.09); }
+  .face-btn:hover .emoji{ transform:scale(1.2) rotate(-4deg); }
+  .face-btn.picked{
+    border-color:var(--accent2);
+    background:linear-gradient(160deg, rgba(63,214,192,0.25), rgba(139,107,255,0.2));
+    box-shadow:0 8px 20px rgba(63,214,192,0.25);
+  }
+  .face-btn.picked span.lbl{ color:var(--text); }
+
+  .nav-row{
+    display:flex;
+    gap:12px;
+    margin-top:20px;
+    justify-content:center;
+  }
+
+  .streak-msg{
+    font-size:0.85rem;
+    color:var(--accent3);
+    font-weight:800;
+    min-height:20px;
+  }
+
+  /* finale */
+  .certificate{
+    background:linear-gradient(160deg,#fff7e6,#ffe9c2);
+    color:#432c00;
+    border-radius:20px;
+    padding:26px 22px;
+    width:100%;
+    max-width:440px;
+    border:4px dashed #ffb84d;
+    position:relative;
+  }
+  .certificate h2{ margin:6px 0 2px; font-size:1.3rem; }
+  .certificate .name{ font-size:1.5rem; font-weight:900; color:#c1521a; margin:4px 0; }
+  .certificate .badge-row{ display:flex; justify-content:center; flex-wrap:wrap; gap:6px; font-size:1.5rem; margin:12px 0; }
+  .certificate .stat{ font-size:0.85rem; color:#6b4a12; }
+
+  .confetti-piece{
+    position:fixed;
+    top:-20px;
+    z-index:999;
+    pointer-events:none;
+    border-radius:2px;
+  }
+
+  footer.note{
+    text-align:center;
+    color:var(--muted);
+    font-size:0.72rem;
+    margin-top:18px;
+  }
+
+  @media (max-width:420px){
+    .face-btn{ width:72px; padding:10px 6px;}
+    .face-btn .emoji{ font-size:1.7rem; }
+    h1{ font-size:1.4rem; }
+    .q-text{ font-size:1.08rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div class="wrap">
+  <div class="hud">
+    <div class="hud-title"><span class="bot">🧑‍🎓</span> Team Ledo</div>
+    <div class="stars-count">⭐ <span id="starTotal">0</span> / <span id="starMax">0</span></div>
+  </div>
+
+  <div class="track-outer">
+    <div class="track-fill" id="trackFill"></div>
+    <div class="rocket" id="rocket" style="left:0%;">⚙️</div>
+  </div>
+  <div class="track-label" id="trackLabel">Ready to build!</div>
+  <div class="zone-pips" id="zonePips"></div>
+
+  <div class="card">
+
+    <!-- INTRO -->
+    <div class="screen active" id="screen-intro">
+      <div class="mega-bot">🧑‍🎓</div>
+      <h1>Team Ledo</h1>
+      <p class="subtitle">Time to go on a mission! Answer questions about how YOU feel as you travel through 8 zones, earn stars for every one you finish, and unlock your very own certificate at the end. There are no wrong answers — just be you! 🛠️✨</p>
+
+      <div class="field">
+        <label for="nameInput">✍️ What's your name?</label>
+        <input type="text" id="nameInput" placeholder="Type your name here...">
+      </div>
+
+      <div class="field">
+        <label>🛠️ Which mission (program) are you on?</label>
+        <div class="chip-row" id="programChips">
+          <div class="chip" data-val="Robotics">🤖 Robotics</div>
+          <div class="chip" data-val="Computer Fundamentals">💻 Computer Fundamentals</div>
+          <div class="chip" data-val="Financial Literacy">💰 Financial Literacy</div>
+        </div>
+      </div>
+
+      <button class="btn" id="startBtn">Start Mission 🛠️</button>
+    </div>
+
+    <!-- ZONE TRANSITION -->
+    <div class="screen" id="screen-zone">
+      <div class="zone-emoji" id="zoneEmoji">🚀</div>
+      <div class="zone-kicker" id="zoneKicker">Zone 1 of 8</div>
+      <div class="zone-title" id="zoneTitle">Launch Pad</div>
+      <div class="zone-tagline" id="zoneTagline">Who are you as a learner?</div>
+      <div class="zone-count" id="zoneCount">5 questions in this zone</div>
+      <button class="btn" id="zoneContinueBtn">Enter Zone ➡</button>
+    </div>
+
+    <!-- QUESTION TEMPLATE (filled by JS) -->
+    <div class="screen" id="screen-question">
+      <div class="q-index" id="qIndex">Zone 1 of 8 · Question 1</div>
+      <div class="q-planet" id="qPlanet">🚀</div>
+      <div class="q-text" id="qText">Question text</div>
+      <div class="scale" id="qScale"></div>
+      <div class="streak-msg" id="streakMsg"></div>
+      <div class="nav-row">
+        <button class="btn secondary" id="backBtn">⬅ Back</button>
+        <button class="btn" id="nextBtn" disabled>Next ➡</button>
+      </div>
+    </div>
+
+    <!-- FINALE -->
+    <div class="screen" id="screen-finale">
+      <div style="font-size:3.4rem;">🎉🧑‍🎓🎉</div>
+      <h1>Mission Complete!</h1>
+      <div class="certificate">
+        <div>🏆 CERTIFICATE OF AWESOMENESS 🏆</div>
+        <h2>This is to certify that</h2>
+        <div class="name" id="certName">Student</div>
+        <div>successfully completed the</div>
+        <div style="font-weight:800;" id="certProgram">Team Ledo Mission</div>
+        <div class="badge-row" id="badgeRow"></div>
+        <div class="stat" id="certStat">You collected 0 of 0 stars!</div>
+      </div>
+      <div id="submitStatus" style="min-height:22px; font-weight:700; font-size:0.9rem;"></div>
+      <button class="btn" id="downloadBtn">⬇️ Download My Answers</button>
+      <button class="btn secondary" id="restartBtn">🔁 Play Again</button>
+    </div>
+
+  </div>
+
+  <footer class="note" id="footerNote">Your answers help your teachers understand how you feel about your program. Have fun! 🏗️</footer>
+</div>
+
+<script>
+/* ---------------- Starfield background ---------------- */
+(function(){
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let w,h,stars=[];
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    stars = [];
+    const count = Math.floor((w*h)/9000);
+    for(let i=0;i<count;i++){
+      stars.push({
+        x: Math.random()*w,
+        y: Math.random()*h,
+        r: Math.random()*1.6+0.3,
+        s: Math.random()*0.02+0.005,
+        phase: Math.random()*Math.PI*2
+      });
+    }
+  }
+  function draw(t){
+    ctx.clearRect(0,0,w,h);
+    for(const st of stars){
+      const alpha = 0.4 + 0.6*Math.abs(Math.sin(st.phase + t*st.s));
+      ctx.beginPath();
+      ctx.arc(st.x, st.y, st.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(draw);
+})();
+
+/* ---------------- Sound (tiny beeps, no external files) ---------------- */
+let audioCtx;
+function beep(freq=520, dur=0.08, type='sine', vol=0.06){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    o.stop(audioCtx.currentTime + dur);
+  }catch(e){}
+}
+
+/* ---------------- Confetti burst ---------------- */
+function confettiBurst(x, y, count=18){
+  const colors = ['#2f6fed','#ffb200','#ff6a3d','#eaf2ff','#3ecf8e'];
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 6 + Math.random()*6;
+    el.style.width = size+'px';
+    el.style.height = (size*0.6)+'px';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.body.appendChild(el);
+    const dx = (Math.random()-0.5)*280;
+    const dy = 200 + Math.random()*260;
+    const rot = (Math.random()-0.5)*720;
+    const dur = 900 + Math.random()*700;
+    el.animate([
+      { transform:`translate(0,0) rotate(0deg)`, opacity:1 },
+      { transform:`translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity:0 }
+    ], { duration: dur, easing:'cubic-bezier(.2,.6,.4,1)' });
+    setTimeout(()=>el.remove(), dur+50);
+  }
+}
+function bigConfetti(){
+  for(let i=0;i<6;i++){
+    setTimeout(()=>{
+      confettiBurst(Math.random()*window.innerWidth, -10, 26);
+    }, i*160);
+  }
+}
+
+/* ================================================================
+   GOOGLE SHEETS SUBMISSION CONFIG
+   ----------------------------------------------------------------
+   Paste the Apps Script Web App URL below (Deploy > New deployment >
+   Web app, "Anyone" access) and set SUBMIT_TO_SHEET = true. Every
+   finished survey sends one row per answered question to the sheet.
+   ================================================================ */
+const SUBMIT_TO_SHEET = true; // flip to true once WEB_APP_URL is set
+
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbylYsiSYvRNDGigHx75grYnIlDBV5gv7lzhXmRigoa7vlCB1wr7ysR4UjQ1MRIMkIj3/exec";
+
+async function submitToSheet(state){
+  if(!SUBMIT_TO_SHEET) return { skipped:true };
+
+  const submittedAt = new Date().toISOString();
+  const rows = QUESTIONS.map((q, i)=>({
+    student_name: state.name,
+    program: state.program,
+    zone_area: q.area,
+    question: q.text,
+    answer: state.answers[i],
+    submitted_at: submittedAt
+  }));
+
+  const res = await fetch(WEB_APP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight on Apps Script
+    body: JSON.stringify({ rows })
+  });
+  const data = await res.json();
+
+  if(!data || data.ok !== true){
+    const msg = (data && data.error) || "Unknown error";
+    throw new Error(msg);
+  }
+  return data;
+}
+
+/* ---------------- Zone (Area) metadata — shared across missions ---------------- */
+const ZONES = [
+  { area:'Learner Identity',              emoji:'🚀', title:'Launch Pad',        tagline:'Who are you as a learner?' },
+  { area:'Belonging and Relatedness',     emoji:'🏠', title:'Home Base',         tagline:'Do you feel at home here?' },
+  { area:'Competency and Self Efficacy',  emoji:'💪', title:'Power-Up Zone',     tagline:'How strong are your skills?' },
+  { area:'Autonomy and Ownership',        emoji:'🎮', title:'Control Room',      tagline:'How much choice do you feel you have?' },
+  { area:'Purpose and Relevance',         emoji:'🌟', title:'Mission Briefing',  tagline:'Why does this matter to you?' },
+  { area:'Cognitive Engagement',          emoji:'🔥', title:'Engagement Engine', tagline:'How does this make you feel?' },
+  { area:'Constructive Coping',           emoji:'🧩', title:'Puzzle Lab',        tagline:'What do you do when things get tough?' },
+  { area:'Growth Mindset',                emoji:'🌱', title:'Grow Zone',         tagline:'What do you believe about your brain?' }
+];
+function zoneFor(area){ return ZONES.find(z=>z.area===area); }
+
+/* ---------------- Question banks (from the CSVs, one set per mission) ---------------- */
+function bank(subject){
+  return [
+    // Launch Pad — Learner Identity
+    { area:'Learner Identity', text:`I can succeed in situations that involve understanding ${subject}.` },
+    { area:'Learner Identity', text:`I would like a job that uses ${subject} when I'm an adult.` },
+    { area:'Learner Identity', text:`I like learning new things.` },
+    { area:'Learner Identity', text:`I like to solve complex problems.` },
+    { area:'Learner Identity', text:`I like going to school.` },
+    // Home Base — Belonging and Relatedness
+    { area:'Belonging and Relatedness', text:`I feel like I belong in ${subject}.` },
+    { area:'Belonging and Relatedness', text:`I feel respected in ${subject}.` },
+    { area:'Belonging and Relatedness', text:`I feel comfortable in ${subject}.` },
+    // Power-Up Zone — Competency and Self Efficacy
+    { area:'Competency and Self Efficacy', text:`I believe that I can do well in ${subject}.` },
+    { area:'Competency and Self Efficacy', text:`I am good at learning ${subject}.` },
+    { area:'Competency and Self Efficacy', text:`I can help others understand ${subject} ideas.` },
+    { area:'Competency and Self Efficacy', text:`I'm good at solving ${subject} challenges.` },
+    // Control Room — Autonomy and Ownership
+    { area:'Autonomy and Ownership', text:`I like to have choice in how I learn something.` },
+    { area:'Autonomy and Ownership', text:`I like to have choice in how I complete an assignment or task.` },
+    { area:'Autonomy and Ownership', text:`I like to have choice in what I am learning.` },
+    { area:'Autonomy and Ownership', text:`I feel responsible for my own learning in ${subject}.` },
+    { area:'Autonomy and Ownership', text:`I'm proud of what I do in ${subject}.` },
+    // Mission Briefing — Purpose and Relevance
+    { area:'Purpose and Relevance', text:`${subject} knowledge is important for my future.` },
+    { area:'Purpose and Relevance', text:`The things we learn in ${subject} are useful to me.` },
+    { area:'Purpose and Relevance', text:`It is important to know ${subject} in order to get a good job.` },
+    { area:'Purpose and Relevance', text:`Science, technology, engineering, and mathematics make our lives better.` },
+    { area:'Purpose and Relevance', text:`I'm learning valuable skills when I'm learning ${subject}.` },
+    // Engagement Engine — Cognitive Engagement
+    { area:'Cognitive Engagement', text:`I find topics in ${subject} interesting.` },
+    { area:'Cognitive Engagement', text:`I look forward to ${subject}.` },
+    { area:'Cognitive Engagement', text:`I enjoy learning new things in ${subject}.` },
+    { area:'Cognitive Engagement', text:`I often feel bored during ${subject}.` },
+    { area:'Cognitive Engagement', text:`I enjoy being challenged in ${subject}.` },
+    // Puzzle Lab — Constructive Coping
+    { area:'Constructive Coping', text:`If I don't understand something in ${subject}, I seek help.` },
+    { area:'Constructive Coping', text:`If a problem in ${subject} is really difficult, I just work harder.` },
+    { area:'Constructive Coping', text:`When I have a hard ${subject} problem to solve, I give up easily.` },
+    { area:'Constructive Coping', text:`Using technology helps me learn science, mathematics or engineering.` },
+    { area:'Constructive Coping', text:`If I get stuck, I try something different to solve the problem or complete the task.` },
+    // Grow Zone — Growth Mindset
+    { area:'Growth Mindset', text:`You have a certain amount of intelligence, and you really can't do much to change it.` },
+    { area:'Growth Mindset', text:`You can always change how intelligent you are.` },
+    { area:'Growth Mindset', text:`If I put in enough effort, I can succeed in ${subject}.` }
+  ];
+}
+
+const QUESTION_BANK = {
+  'Robotics': bank('Robotics'),
+  'Computer Fundamentals': bank('Computer Fundamentals'),
+  'Financial Literacy': bank('Financial Literacy')
+};
+
+let QUESTIONS = []; // set once mission is picked
+
+const SCALE = [
+  { val:1, emoji:'😖', label:'No way!' },
+  { val:2, emoji:'😕', label:'Not really' },
+  { val:3, emoji:'😐', label:'Kind of' },
+  { val:4, emoji:'🙂', label:'Yes!' },
+  { val:5, emoji:'🤩', label:'Totally!' }
+];
+
+const STREAK_MSGS = ['Nice! ⭐','Great job! 🌟','You\'re on a roll! 🔥','Awesome! 🚀','Super star! ✨'];
+
+/* ---------------- State ---------------- */
+let state = {
+  name: '',
+  program: '',
+  current: -1, // -1 = intro
+  answers: [],
+  stars: 0
+};
+let MAX_STARS = 0;
+let shownZones = new Set();
+
+/* ---------------- Elements ---------------- */
+const screens = {
+  intro: document.getElementById('screen-intro'),
+  zone: document.getElementById('screen-zone'),
+  question: document.getElementById('screen-question'),
+  finale: document.getElementById('screen-finale')
+};
+const nameInput = document.getElementById('nameInput');
+const programChips = document.getElementById('programChips');
+const startBtn = document.getElementById('startBtn');
+const zoneEmoji = document.getElementById('zoneEmoji');
+const zoneKicker = document.getElementById('zoneKicker');
+const zoneTitle = document.getElementById('zoneTitle');
+const zoneTagline = document.getElementById('zoneTagline');
+const zoneCount = document.getElementById('zoneCount');
+const zoneContinueBtn = document.getElementById('zoneContinueBtn');
+const qIndex = document.getElementById('qIndex');
+const qPlanet = document.getElementById('qPlanet');
+const qText = document.getElementById('qText');
+const qScale = document.getElementById('qScale');
+const backBtn = document.getElementById('backBtn');
+const nextBtn = document.getElementById('nextBtn');
+const streakMsg = document.getElementById('streakMsg');
+const trackFill = document.getElementById('trackFill');
+const rocket = document.getElementById('rocket');
+const trackLabel = document.getElementById('trackLabel');
+const zonePips = document.getElementById('zonePips');
+const starTotalEl = document.getElementById('starTotal');
+const footerNote = document.getElementById('footerNote');
+
+/* ---------------- Program chips ---------------- */
+let selectedProgram = '';
+programChips.addEventListener('click', (e)=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  [...programChips.children].forEach(c=>c.classList.remove('selected'));
+  chip.classList.add('selected');
+  selectedProgram = chip.dataset.val;
+  beep(440,0.05);
+});
+
+/* ---------------- Navigation ---------------- */
+function showScreen(name){
+  Object.values(screens).forEach(s=>s.classList.remove('active'));
+  screens[name].classList.add('active');
+}
+
+function buildZonePips(){
+  zonePips.innerHTML = '';
+  ZONES.forEach(z=>{
+    const span = document.createElement('span');
+    span.className = 'zone-pip';
+    span.textContent = z.emoji;
+    span.dataset.area = z.area;
+    span.title = z.title;
+    zonePips.appendChild(span);
+  });
+}
+
+function updateZonePips(){
+  const currentArea = (state.current>=0 && state.current<QUESTIONS.length) ? QUESTIONS[state.current].area : null;
+  [...zonePips.children].forEach(pip=>{
+    pip.classList.remove('done','current');
+    const zIdx = ZONES.findIndex(z=>z.area===pip.dataset.area);
+    const curIdx = ZONES.findIndex(z=>z.area===currentArea);
+    if(pip.dataset.area === currentArea) pip.classList.add('current');
+    else if(curIdx > -1 && zIdx < curIdx) pip.classList.add('done');
+    else if(state.current >= QUESTIONS.length) pip.classList.add('done');
+  });
+}
+
+function updateProgress(){
+  const total = QUESTIONS.length;
+  const idx = Math.max(state.current,0);
+  const pct = state.current < 0 ? 0 : (idx/(total-1))*100;
+  trackFill.style.width = Math.min(pct,100)+'%';
+  rocket.style.left = Math.min(pct,100)+'%';
+  if(state.current < 0){
+    trackLabel.textContent = 'Ready to build!';
+  } else if(state.current >= total){
+    trackLabel.textContent = 'Mission complete! 🎉';
+  } else {
+    const z = zoneFor(QUESTIONS[idx].area);
+    trackLabel.textContent = `${z.emoji} ${z.title} — Step ${idx+1} of ${total}`;
+  }
+  starTotalEl.textContent = state.stars;
+  updateZonePips();
+}
+
+startBtn.addEventListener('click', ()=>{
+  const nm = nameInput.value.trim();
+  if(!nm){ nameInput.style.borderColor = '#ff6b6b'; nameInput.focus(); return; }
+  if(!selectedProgram){
+    programChips.style.outline = '2px solid #ff6b6b';
+    setTimeout(()=>programChips.style.outline='', 900);
+    return;
+  }
+  state.name = nm;
+  state.program = selectedProgram;
+
+  QUESTIONS = QUESTION_BANK[selectedProgram];
+  state.answers = new Array(QUESTIONS.length).fill(null);
+  MAX_STARS = QUESTIONS.length;
+  document.getElementById('starMax').textContent = MAX_STARS;
+  footerNote.textContent = `Your answers help your teachers understand how you feel about ${selectedProgram}. Have fun! 🏗️`;
+
+  shownZones = new Set();
+  buildZonePips();
+  state.current = 0;
+  beep(660,0.1,'triangle');
+  enterZoneThen(0, ()=>{ renderQuestion(); showScreen('question'); });
+  updateProgress();
+});
+
+/* Show a fun zone-intro card the first time we reach a new area. */
+function enterZoneThen(i, cb){
+  const area = QUESTIONS[i].area;
+  if(shownZones.has(area)){ cb(); return; }
+  shownZones.add(area);
+  const z = zoneFor(area);
+  const zIdx = ZONES.findIndex(zz=>zz.area===area);
+  const count = QUESTIONS.filter(q=>q.area===area).length;
+  zoneEmoji.textContent = z.emoji;
+  zoneKicker.textContent = `Zone ${zIdx+1} of ${ZONES.length}`;
+  zoneTitle.textContent = z.title;
+  zoneTagline.textContent = z.tagline;
+  zoneCount.textContent = `${count} question${count===1?'':'s'} in this zone`;
+  showScreen('zone');
+  beep(520,0.1,'triangle'); setTimeout(()=>beep(700,0.12,'triangle'),110);
+  zoneContinueBtn.onclick = ()=>{ beep(600,0.08); cb(); };
+}
+
+function renderQuestion(){
+  const i = state.current;
+  const z = zoneFor(QUESTIONS[i].area);
+  const zIdx = ZONES.findIndex(zz=>zz.area===QUESTIONS[i].area);
+  const zoneQs = QUESTIONS.map((q,idx)=>({q,idx})).filter(o=>o.q.area===QUESTIONS[i].area);
+  const posInZone = zoneQs.findIndex(o=>o.idx===i)+1;
+
+  qIndex.textContent = `Zone ${zIdx+1} of ${ZONES.length} · ${z.title} · ${posInZone}/${zoneQs.length}`;
+  qPlanet.textContent = z.emoji;
+  qText.textContent = QUESTIONS[i].text;
+  qScale.innerHTML = '';
+  streakMsg.textContent = '';
+
+  SCALE.forEach(opt=>{
+    const btn = document.createElement('div');
+    btn.className = 'face-btn';
+    if(state.answers[i] === opt.val) btn.classList.add('picked');
+    btn.innerHTML = `<span class="emoji">${opt.emoji}</span><span class="lbl">${opt.label}</span>`;
+    btn.addEventListener('click', (e)=>{
+      state.answers[i] = opt.val;
+      [...qScale.children].forEach(c=>c.classList.remove('picked'));
+      btn.classList.add('picked');
+      beep(300 + opt.val*70, 0.09, 'triangle');
+      const rect = btn.getBoundingClientRect();
+      confettiBurst(rect.left+rect.width/2, rect.top+rect.height/2, 14);
+      recalcStars();
+      streakMsg.textContent = STREAK_MSGS[Math.floor(Math.random()*STREAK_MSGS.length)];
+      nextBtn.disabled = false;
+    });
+    qScale.appendChild(btn);
+  });
+
+  backBtn.style.visibility = i === 0 ? 'hidden' : 'visible';
+  nextBtn.disabled = state.answers[i] === null;
+  nextBtn.textContent = (i === QUESTIONS.length-1) ? 'Finish Mission 🏁' : 'Next ➡';
+  updateProgress();
+}
+
+function recalcStars(){
+  state.stars = state.answers.filter(a=>a!==null).length;
+  starTotalEl.textContent = state.stars;
+}
+
+backBtn.addEventListener('click', ()=>{
+  if(state.current > 0){
+    state.current--;
+    beep(260,0.06);
+    renderQuestion();
+    showScreen('question');
+  }
+});
+
+nextBtn.addEventListener('click', ()=>{
+  if(state.answers[state.current] === null) return;
+  if(state.current === QUESTIONS.length-1){
+    finishMission();
+  } else {
+    state.current++;
+    beep(500,0.07,'triangle');
+    enterZoneThen(state.current, ()=>{ renderQuestion(); showScreen('question'); });
+  }
+});
+
+function finishMission(){
+  state.current = QUESTIONS.length;
+  updateProgress();
+  document.getElementById('certName').textContent = state.name;
+  document.getElementById('certProgram').textContent = `Team Ledo ${state.program} Mission`;
+  document.getElementById('certStat').textContent = `You collected ${state.stars} of ${MAX_STARS} stars across all 8 zones on your ${state.program} mission!`;
+  const badgeRow = document.getElementById('badgeRow');
+  const pct = state.stars / MAX_STARS;
+  let badges = ['🛠️'];
+  if(pct >= 0.5) badges.push('🥉');
+  if(pct >= 0.8) badges.push('🥈');
+  if(pct >= 1) badges.push('🥇');
+  badges.push('🎓');
+  badgeRow.textContent = badges.join(' ');
+  showScreen('finale');
+  bigConfetti();
+  beep(523,0.12,'triangle'); setTimeout(()=>beep(659,0.12,'triangle'),120); setTimeout(()=>beep(784,0.18,'triangle'),240);
+
+  const statusEl = document.getElementById('submitStatus');
+  if(SUBMIT_TO_SHEET){
+    statusEl.style.color = 'var(--muted)';
+    statusEl.textContent = '📡 Sending your answers to mission control...';
+    submitToSheet(state)
+      .then(()=>{
+        statusEl.style.color = 'var(--good)';
+        statusEl.textContent = '✅ Answers sent! Great job!';
+      })
+      .catch((err)=>{
+        statusEl.style.color = '#ff8080';
+        statusEl.textContent = '⚠️ Could not send automatically — please use Download instead.';
+        console.error('ArcGIS submit failed:', err);
+      });
+  } else {
+    statusEl.textContent = '';
+  }
+}
+
+/* ---------------- Download answers as CSV ---------------- */
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const headers = ['Name','Program', ...QUESTIONS.map(q=>`${q.text} [${q.area}]`)];
+  const row = [state.name, state.program, ...state.answers];
+  const esc = (v)=>`"${String(v).replace(/"/g,'""')}"`;
+  const csv = headers.map(esc).join(',') + '\n' + row.map(esc).join(',');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `TeamLedo_${state.program.replace(/\s+/g,'_')}_${state.name.replace(/\s+/g,'_')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  QUESTIONS = [];
+  state = { name:'', program:'', current:-1, answers:[], stars:0 };
+  MAX_STARS = 0;
+  shownZones = new Set();
+  document.getElementById('starMax').textContent = MAX_STARS;
+  nameInput.value = '';
+  selectedProgram = '';
+  [...programChips.children].forEach(c=>c.classList.remove('selected'));
+  zonePips.innerHTML = '';
+  showScreen('intro');
+  updateProgress();
+});
+
+updateProgress();
+</script>
+</body>
+</html>
