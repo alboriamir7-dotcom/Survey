@@ -562,6 +562,8 @@
     50%{ transform:translateY(-6px) rotate(3deg); }
   }
 
+  .companion.flying{ z-index:30; pointer-events:none; }
+
   @media (max-width:420px){
     .companion-avatar{ width:48px; height:48px; font-size:1.5rem; }
     .companion.level-3 .companion-avatar{ width:56px; height:56px; font-size:1.8rem; }
@@ -823,17 +825,28 @@ async function submitToSheet(state){
   return data;
 }
 
-/* ---------------- Zone (Area) metadata — shared across missions ---------------- */
-const ZONES = [
-  { area:'Learner Identity',              emoji:'🚀', title:'Launch Pad',        tagline:'Who are you as a learner?' },
-  { area:'Belonging and Relatedness',     emoji:'🏠', title:'Home Base',         tagline:'Do you feel at home here?' },
-  { area:'Competency and Self Efficacy',  emoji:'💪', title:'Power-Up Zone',     tagline:'How strong are your skills?' },
-  { area:'Autonomy and Ownership',        emoji:'🎮', title:'Control Room',      tagline:'How much choice do you feel you have?' },
-  { area:'Purpose and Relevance',         emoji:'🌟', title:'Mission Briefing',  tagline:'Why does this matter to you?' },
-  { area:'Cognitive Engagement',          emoji:'🔥', title:'Engagement Engine', tagline:'How does this make you feel?' },
-  { area:'Constructive Coping',           emoji:'🧩', title:'Puzzle Lab',        tagline:'What do you do when things get tough?' },
-  { area:'Growth Mindset',                emoji:'🌱', title:'Grow Zone',         tagline:'What do you believe about your brain?' }
-];
+/* ---------------- Zone (Area) metadata — one themed emoji set per mission ---------------- */
+function makeZones(emojis){
+  const meta = [
+    { area:'Learner Identity',              title:'Launch Pad',        tagline:'Who are you as a learner?' },
+    { area:'Belonging and Relatedness',     title:'Home Base',         tagline:'Do you feel at home here?' },
+    { area:'Competency and Self Efficacy',  title:'Power-Up Zone',     tagline:'How strong are your skills?' },
+    { area:'Autonomy and Ownership',        title:'Control Room',      tagline:'How much choice do you feel you have?' },
+    { area:'Purpose and Relevance',         title:'Mission Briefing',  tagline:'Why does this matter to you?' },
+    { area:'Cognitive Engagement',          title:'Engagement Engine', tagline:'How does this make you feel?' },
+    { area:'Constructive Coping',           title:'Puzzle Lab',        tagline:'What do you do when things get tough?' },
+    { area:'Growth Mindset',                title:'Grow Zone',         tagline:'What do you believe about your brain?' }
+  ];
+  return meta.map((m,i)=>({ ...m, emoji: emojis[i] }));
+}
+
+const ZONES_BY_PROGRAM = {
+  'Robotics':               makeZones(['🚀','🔧','⚙️','🕹️','🛰️','🦾','🧰','🔩']),
+  'Computer Fundamentals':  makeZones(['💻','🌐','🧠','🖱️','📡','💡','🧩','🔄']),
+  'Financial Literacy':     makeZones(['💰','🏦','💳','🎯','📈','💵','🪙','📊'])
+};
+
+let ZONES = ZONES_BY_PROGRAM['Robotics']; // default until a mission is picked
 function zoneFor(area){ return ZONES.find(z=>z.area===area); }
 
 /* ---------------- Question banks (from the CSVs, one set per mission) ---------------- */
@@ -974,6 +987,27 @@ function companionBounce(){
   companion.classList.add('bounce');
 }
 
+// Sends the companion flying over to a spot on screen (e.g. the answer
+// button just tapped), so it feels like HE is the one making the pick,
+// then springs back home.
+let companionFlyTimer = null;
+function companionFlyTo(x, y){
+  const rect = companion.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+  const dx = x - cx;
+  const dy = y - cy;
+  clearTimeout(companionFlyTimer);
+  companion.classList.add('flying');
+  companion.style.transition = 'transform .38s cubic-bezier(.25,1.6,.4,1)';
+  companion.style.transform = `translate(${dx}px, ${dy}px) scale(1.2) rotate(-6deg)`;
+  companionFlyTimer = setTimeout(()=>{
+    companion.style.transition = 'transform .4s cubic-bezier(.3,1.3,.4,1)';
+    companion.style.transform = '';
+    setTimeout(()=>companion.classList.remove('flying'), 420);
+  }, 420);
+}
+
 function updateCompanionLevel(){
   const total = MAX_STARS || 1;
   const pct = state.stars / total;
@@ -1078,6 +1112,7 @@ startBtn.addEventListener('click', ()=>{
   }
   state.name = nm;
   state.program = selectedProgram;
+  ZONES = ZONES_BY_PROGRAM[selectedProgram];
 
   QUESTIONS = QUESTION_BANK[selectedProgram];
   state.answers = new Array(QUESTIONS.length).fill(null);
@@ -1143,8 +1178,9 @@ function renderQuestion(){
       recalcStars();
       streakMsg.textContent = STREAK_MSGS[Math.floor(Math.random()*STREAK_MSGS.length)];
       nextBtn.disabled = false;
-      companionBounce();
+      companionFlyTo(rect.left+rect.width/2, rect.top+rect.height/2);
       if(opt.val >= 4){ companionSpeak(COMPANION_LINES[Math.floor(Math.random()*COMPANION_LINES.length)]); }
+      else if(opt.val <= 2){ companionSpeak('Okay! Noted. 📝'); }
     });
     qScale.appendChild(btn);
   });
