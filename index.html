@@ -276,7 +276,8 @@
 
   .field{ width:100%; max-width:380px; text-align:left; margin-top:6px; }
   .field label{ display:block; font-size:0.85rem; color:var(--muted); margin-bottom:6px; font-weight:700; }
-  .field input[type=text]{
+  .field input[type=text],
+  .field input[type=date]{
     width:100%;
     padding:14px 16px;
     border-radius:14px;
@@ -286,8 +287,10 @@
     font-size:1rem;
     outline:none;
     transition:border .2s, transform .2s;
+    color-scheme: dark;
   }
-  .field input[type=text]:focus{ border-color:var(--accent2); transform:scale(1.02); }
+  .field input[type=text]:focus,
+  .field input[type=date]:focus{ border-color:var(--accent2); transform:scale(1.02); }
 
   .chip-row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:6px; }
   .chip{
@@ -492,8 +495,18 @@
       <p class="subtitle">Time to go on a mission! Answer questions about how YOU feel as you travel through 8 zones, earn stars for every one you finish, and unlock your very own certificate at the end. There are no wrong answers — just be you! 🛠️✨</p>
 
       <div class="field">
-        <label for="nameInput">✍️ What's your name?</label>
-        <input type="text" id="nameInput" placeholder="Type your name here...">
+        <label for="nameInput">✍️ What's your first name?</label>
+        <input type="text" id="nameInput" placeholder="Type your first name here...">
+      </div>
+
+      <div class="field">
+        <label for="lastNameInput">✍️ What's your last name?</label>
+        <input type="text" id="lastNameInput" placeholder="Type your last name here...">
+      </div>
+
+      <div class="field">
+        <label for="dobInput">🎂 What's your date of birth?</label>
+        <input type="date" id="dobInput">
       </div>
 
       <div class="field">
@@ -658,6 +671,8 @@ async function submitToSheet(state){
   const submittedAt = new Date().toISOString();
   const rows = QUESTIONS.map((q, i)=>({
     student_name: state.name,
+    last_name: state.lastName,
+    dob: state.dob,
     program: state.program,
     zone_area: q.area,
     question: q.text,
@@ -762,6 +777,8 @@ const STREAK_MSGS = ['Nice! ⭐','Great job! 🌟','You\'re on a roll! 🔥','Aw
 /* ---------------- State ---------------- */
 let state = {
   name: '',
+  lastName: '',
+  dob: '',
   program: '',
   current: -1, // -1 = intro
   answers: [],
@@ -778,6 +795,8 @@ const screens = {
   finale: document.getElementById('screen-finale')
 };
 const nameInput = document.getElementById('nameInput');
+const lastNameInput = document.getElementById('lastNameInput');
+const dobInput = document.getElementById('dobInput');
 const programChips = document.getElementById('programChips');
 const startBtn = document.getElementById('startBtn');
 const zoneEmoji = document.getElementById('zoneEmoji');
@@ -869,13 +888,19 @@ function updateProgress(){
 
 startBtn.addEventListener('click', ()=>{
   const nm = nameInput.value.trim();
+  const lastNm = lastNameInput.value.trim();
+  const dobVal = dobInput.value;
   if(!nm){ nameInput.style.borderColor = '#ff6b6b'; nameInput.focus(); return; }
+  if(!lastNm){ lastNameInput.style.borderColor = '#ff6b6b'; lastNameInput.focus(); return; }
+  if(!dobVal){ dobInput.style.borderColor = '#ff6b6b'; dobInput.focus(); return; }
   if(!selectedProgram){
     programChips.style.outline = '2px solid #ff6b6b';
     setTimeout(()=>programChips.style.outline='', 900);
     return;
   }
   state.name = nm;
+  state.lastName = lastNm;
+  state.dob = dobVal;
   state.program = selectedProgram;
 
   QUESTIONS = QUESTION_BANK[selectedProgram];
@@ -976,7 +1001,7 @@ nextBtn.addEventListener('click', ()=>{
 function finishMission(){
   state.current = QUESTIONS.length;
   updateProgress();
-  document.getElementById('certName').textContent = state.name;
+  document.getElementById('certName').textContent = `${state.name} ${state.lastName}`;
   document.getElementById('certProgram').textContent = `Team Ledo ${state.program} Mission`;
   document.getElementById('certStat').textContent = `You collected ${state.stars} of ${MAX_STARS} stars across all 8 zones on your ${state.program} mission!`;
   const badgeRow = document.getElementById('badgeRow');
@@ -1012,8 +1037,8 @@ function finishMission(){
 
 /* ---------------- Download answers as CSV ---------------- */
 document.getElementById('downloadBtn').addEventListener('click', ()=>{
-  const headers = ['Name','Program', ...QUESTIONS.map(q=>`${q.text} [${q.area}]`)];
-  const row = [state.name, state.program, ...state.answers];
+  const headers = ['First Name','Last Name','Date of Birth','Program', ...QUESTIONS.map(q=>`${q.text} [${q.area}]`)];
+  const row = [state.name, state.lastName, state.dob, state.program, ...state.answers];
   const esc = (v)=>`"${String(v).replace(/"/g,'""')}"`;
   const csv = headers.map(esc).join(',') + '\n' + row.map(esc).join(',');
   const blob = new Blob([csv], {type:'text/csv'});
@@ -1029,11 +1054,13 @@ document.getElementById('downloadBtn').addEventListener('click', ()=>{
 
 document.getElementById('restartBtn').addEventListener('click', ()=>{
   QUESTIONS = [];
-  state = { name:'', program:'', current:-1, answers:[], stars:0 };
+  state = { name:'', lastName:'', dob:'', program:'', current:-1, answers:[], stars:0 };
   MAX_STARS = 0;
   shownZones = new Set();
   document.getElementById('starMax').textContent = MAX_STARS;
   nameInput.value = '';
+  lastNameInput.value = '';
+  dobInput.value = '';
   selectedProgram = '';
   document.body.classList.remove('theme-robotics','theme-tech','theme-financial');
   [...programChips.children].forEach(c=>c.classList.remove('selected'));
