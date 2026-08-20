@@ -436,6 +436,137 @@
     h1{ font-size:1.4rem; }
     .q-text{ font-size:1.08rem; }
   }
+
+  /* ---- Companion — a leveling-up sidekick that lives through the whole mission ---- */
+  .companion{
+    position:fixed;
+    right:14px;
+    bottom:14px;
+    z-index:20;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .companion-glow{
+    position:absolute;
+    inset:-10px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(255,178,0,0.35), transparent 70%);
+    filter:blur(4px);
+    opacity:0.5;
+    transition:opacity .4s, background .4s;
+    pointer-events:none;
+  }
+  .companion-avatar{
+    position:relative;
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    background:linear-gradient(160deg, var(--panel-light), var(--panel));
+    border:2px solid rgba(255,255,255,0.18);
+    box-shadow:0 8px 20px rgba(0,0,0,0.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.8rem;
+    transition:transform .25s cubic-bezier(.3,1.5,.4,1), width .3s, height .3s, font-size .3s, border-color .3s, box-shadow .3s;
+  }
+  .companion:hover .companion-avatar{ transform:translateY(-3px) scale(1.05); }
+  .companion.bounce .companion-avatar{ animation: companionBounce .5s cubic-bezier(.3,1.8,.4,1); }
+  @keyframes companionBounce{
+    0%{ transform:scale(1) rotate(0deg); }
+    35%{ transform:scale(1.28) rotate(-8deg); }
+    65%{ transform:scale(0.92) rotate(6deg); }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  .companion-accessory{
+    position:absolute;
+    top:-10px;
+    right:-8px;
+    font-size:1.1rem;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    opacity:0;
+    transform:scale(0.4) rotate(-20deg);
+    transition:opacity .4s, transform .4s;
+  }
+  .companion-level{
+    margin-top:4px;
+    font-size:0.62rem;
+    font-weight:800;
+    color:var(--muted);
+    background:rgba(0,0,0,0.35);
+    padding:2px 8px;
+    border-radius:999px;
+    letter-spacing:0.5px;
+  }
+  .companion-speech{
+    position:absolute;
+    bottom:100%;
+    right:0;
+    margin-bottom:8px;
+    background:#fff;
+    color:#22283a;
+    font-weight:800;
+    font-size:0.78rem;
+    padding:8px 12px;
+    border-radius:14px;
+    white-space:nowrap;
+    box-shadow:0 6px 16px rgba(0,0,0,0.35);
+    opacity:0;
+    transform:translateY(6px) scale(0.9);
+    transition:opacity .25s, transform .25s;
+    pointer-events:none;
+  }
+  .companion-speech::after{
+    content:"";
+    position:absolute;
+    top:100%;
+    right:18px;
+    border:6px solid transparent;
+    border-top-color:#fff;
+  }
+  .companion-speech.show{ opacity:1; transform:translateY(0) scale(1); }
+
+  /* Level 2: a soft accessory appears + brighter glow */
+  .companion.level-2 .companion-avatar{ border-color:var(--accent2); box-shadow:0 8px 24px rgba(255,178,0,0.35); }
+  .companion.level-2 .companion-glow{ opacity:0.75; }
+  .companion.level-2 .companion-accessory{ opacity:1; transform:scale(1) rotate(0deg); }
+
+  /* Level 3: bigger, stronger glow, second accessory layer via ::before trick not needed — just brighter */
+  .companion.level-3 .companion-avatar{
+    width:66px; height:66px; font-size:2.1rem;
+    border-color:var(--good);
+    box-shadow:0 10px 28px rgba(62,207,142,0.45);
+  }
+  .companion.level-3 .companion-glow{
+    opacity:0.9;
+    background:radial-gradient(circle, rgba(62,207,142,0.4), transparent 70%);
+  }
+
+  /* Level 4 (max): full glow, biggest, crown accessory, gentle idle float */
+  .companion.level-4 .companion-avatar{
+    width:74px; height:74px; font-size:2.4rem;
+    border-color:var(--accent3);
+    box-shadow:0 12px 32px rgba(255,106,61,0.55);
+    animation: companionIdle 2.4s ease-in-out infinite;
+  }
+  .companion.level-4 .companion-glow{
+    opacity:1;
+    background:radial-gradient(circle, rgba(255,106,61,0.5), transparent 70%);
+  }
+  @keyframes companionIdle{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-6px) rotate(3deg); }
+  }
+
+  @media (max-width:420px){
+    .companion-avatar{ width:48px; height:48px; font-size:1.5rem; }
+    .companion.level-3 .companion-avatar{ width:56px; height:56px; font-size:1.8rem; }
+    .companion.level-4 .companion-avatar{ width:62px; height:62px; font-size:2rem; }
+  }
 </style>
 </head>
 <body>
@@ -495,18 +626,8 @@
       <p class="subtitle">Time to go on a mission! Answer questions about how YOU feel as you travel through 8 zones, earn stars for every one you finish, and unlock your very own certificate at the end. There are no wrong answers — just be you! 🛠️✨</p>
 
       <div class="field">
-        <label for="nameInput">✍️ What's your first name?</label>
-        <input type="text" id="nameInput" placeholder="Type your first name here...">
-      </div>
-
-      <div class="field">
-        <label for="lastNameInput">✍️ What's your last name?</label>
-        <input type="text" id="lastNameInput" placeholder="Type your last name here...">
-      </div>
-
-      <div class="field">
-        <label for="dobInput">🎂 What's your date of birth?</label>
-        <input type="date" id="dobInput">
+        <label for="nameInput">✍️ What's your name?</label>
+        <input type="text" id="nameInput" placeholder="Type your name here...">
       </div>
 
       <div class="field">
@@ -565,6 +686,16 @@
   </div>
 
   <footer class="note" id="footerNote">Your answers help your teachers understand how you feel about your program. Have fun! 🏗️</footer>
+</div>
+
+<div class="companion" id="companion" title="Tap me!">
+  <div class="companion-speech" id="companionSpeech"></div>
+  <div class="companion-glow"></div>
+  <div class="companion-avatar">
+    <span class="companion-char" id="companionChar">🧑‍🎓</span>
+    <span class="companion-accessory" id="companionAccessory"></span>
+  </div>
+  <div class="companion-level" id="companionLevel">Lv 1</div>
 </div>
 
 <script>
@@ -671,8 +802,6 @@ async function submitToSheet(state){
   const submittedAt = new Date().toISOString();
   const rows = QUESTIONS.map((q, i)=>({
     student_name: state.name,
-    last_name: state.lastName,
-    dob: state.dob,
     program: state.program,
     zone_area: q.area,
     question: q.text,
@@ -777,8 +906,6 @@ const STREAK_MSGS = ['Nice! ⭐','Great job! 🌟','You\'re on a roll! 🔥','Aw
 /* ---------------- State ---------------- */
 let state = {
   name: '',
-  lastName: '',
-  dob: '',
   program: '',
   current: -1, // -1 = intro
   answers: [],
@@ -795,8 +922,6 @@ const screens = {
   finale: document.getElementById('screen-finale')
 };
 const nameInput = document.getElementById('nameInput');
-const lastNameInput = document.getElementById('lastNameInput');
-const dobInput = document.getElementById('dobInput');
 const programChips = document.getElementById('programChips');
 const startBtn = document.getElementById('startBtn');
 const zoneEmoji = document.getElementById('zoneEmoji');
@@ -818,6 +943,63 @@ const trackLabel = document.getElementById('trackLabel');
 const zonePips = document.getElementById('zonePips');
 const starTotalEl = document.getElementById('starTotal');
 const footerNote = document.getElementById('footerNote');
+
+/* ---------------- Companion (leveling-up sidekick) ---------------- */
+const companion = document.getElementById('companion');
+const companionChar = document.getElementById('companionChar');
+const companionAccessory = document.getElementById('companionAccessory');
+const companionLevel = document.getElementById('companionLevel');
+const companionSpeech = document.getElementById('companionSpeech');
+
+const COMPANION_LEVELS = [
+  { min:0,    cls:'level-1', char:'🧑‍🎓', accessory:'',   label:'Lv 1' },
+  { min:0.25, cls:'level-2', char:'🧑‍🎓', accessory:'⭐', label:'Lv 2' },
+  { min:0.6,  cls:'level-3', char:'🦸',   accessory:'✨', label:'Lv 3' },
+  { min:1.0,  cls:'level-4', char:'🦸',   accessory:'👑', label:'Lv 4 — MAX!' }
+];
+let companionCurrentLevel = -1;
+
+const COMPANION_LINES = ['You got this! 💪','Keep going! 🚀','Nice pick! ✨','Beep boop! 🤖','Almost there! 🌟','So proud of you! 🎉'];
+
+function companionSpeak(text){
+  companionSpeech.textContent = text;
+  companionSpeech.classList.add('show');
+  clearTimeout(companionSpeak._t);
+  companionSpeak._t = setTimeout(()=>companionSpeech.classList.remove('show'), 1600);
+}
+
+function companionBounce(){
+  companion.classList.remove('bounce');
+  void companion.offsetWidth; // restart animation
+  companion.classList.add('bounce');
+}
+
+function updateCompanionLevel(){
+  const total = MAX_STARS || 1;
+  const pct = state.stars / total;
+  let level = COMPANION_LEVELS[0];
+  for(const lvl of COMPANION_LEVELS){ if(pct >= lvl.min) level = lvl; }
+  const idx = COMPANION_LEVELS.indexOf(level);
+  companionChar.textContent = level.char;
+  companionAccessory.textContent = level.accessory;
+  companionLevel.textContent = level.label;
+  COMPANION_LEVELS.forEach(l=>companion.classList.remove(l.cls));
+  companion.classList.add(level.cls);
+  if(idx !== companionCurrentLevel && companionCurrentLevel !== -1){
+    companionBounce();
+    companionSpeak(idx===COMPANION_LEVELS.length-1 ? 'MAX LEVEL! 👑🎉' : 'Level up! 🎉');
+    beep(700,0.1,'triangle'); setTimeout(()=>beep(900,0.14,'triangle'),100);
+    const rect = companion.getBoundingClientRect();
+    confettiBurst(rect.left+rect.width/2, rect.top, 20);
+  }
+  companionCurrentLevel = idx;
+}
+
+companion.addEventListener('click', ()=>{
+  companionBounce();
+  companionSpeak(COMPANION_LINES[Math.floor(Math.random()*COMPANION_LINES.length)]);
+  beep(500 + Math.random()*300, 0.08, 'triangle');
+});
 
 /* ---------------- Program chips ---------------- */
 let selectedProgram = '';
@@ -888,19 +1070,13 @@ function updateProgress(){
 
 startBtn.addEventListener('click', ()=>{
   const nm = nameInput.value.trim();
-  const lastNm = lastNameInput.value.trim();
-  const dobVal = dobInput.value;
   if(!nm){ nameInput.style.borderColor = '#ff6b6b'; nameInput.focus(); return; }
-  if(!lastNm){ lastNameInput.style.borderColor = '#ff6b6b'; lastNameInput.focus(); return; }
-  if(!dobVal){ dobInput.style.borderColor = '#ff6b6b'; dobInput.focus(); return; }
   if(!selectedProgram){
     programChips.style.outline = '2px solid #ff6b6b';
     setTimeout(()=>programChips.style.outline='', 900);
     return;
   }
   state.name = nm;
-  state.lastName = lastNm;
-  state.dob = dobVal;
   state.program = selectedProgram;
 
   QUESTIONS = QUESTION_BANK[selectedProgram];
@@ -912,7 +1088,11 @@ startBtn.addEventListener('click', ()=>{
   shownZones = new Set();
   buildZonePips();
   state.current = 0;
+  companionCurrentLevel = -1;
+  updateCompanionLevel();
+  companionCurrentLevel = 0;
   beep(660,0.1,'triangle');
+  companionSpeak(`Let's go! 🚀`);
   enterZoneThen(0, ()=>{ renderQuestion(); showScreen('question'); });
   updateProgress();
 });
@@ -963,6 +1143,8 @@ function renderQuestion(){
       recalcStars();
       streakMsg.textContent = STREAK_MSGS[Math.floor(Math.random()*STREAK_MSGS.length)];
       nextBtn.disabled = false;
+      companionBounce();
+      if(opt.val >= 4){ companionSpeak(COMPANION_LINES[Math.floor(Math.random()*COMPANION_LINES.length)]); }
     });
     qScale.appendChild(btn);
   });
@@ -976,6 +1158,7 @@ function renderQuestion(){
 function recalcStars(){
   state.stars = state.answers.filter(a=>a!==null).length;
   starTotalEl.textContent = state.stars;
+  updateCompanionLevel();
 }
 
 backBtn.addEventListener('click', ()=>{
@@ -1001,7 +1184,7 @@ nextBtn.addEventListener('click', ()=>{
 function finishMission(){
   state.current = QUESTIONS.length;
   updateProgress();
-  document.getElementById('certName').textContent = `${state.name} ${state.lastName}`;
+  document.getElementById('certName').textContent = state.name;
   document.getElementById('certProgram').textContent = `Team Ledo ${state.program} Mission`;
   document.getElementById('certStat').textContent = `You collected ${state.stars} of ${MAX_STARS} stars across all 8 zones on your ${state.program} mission!`;
   const badgeRow = document.getElementById('badgeRow');
@@ -1037,8 +1220,8 @@ function finishMission(){
 
 /* ---------------- Download answers as CSV ---------------- */
 document.getElementById('downloadBtn').addEventListener('click', ()=>{
-  const headers = ['First Name','Last Name','Date of Birth','Program', ...QUESTIONS.map(q=>`${q.text} [${q.area}]`)];
-  const row = [state.name, state.lastName, state.dob, state.program, ...state.answers];
+  const headers = ['Name','Program', ...QUESTIONS.map(q=>`${q.text} [${q.area}]`)];
+  const row = [state.name, state.program, ...state.answers];
   const esc = (v)=>`"${String(v).replace(/"/g,'""')}"`;
   const csv = headers.map(esc).join(',') + '\n' + row.map(esc).join(',');
   const blob = new Blob([csv], {type:'text/csv'});
@@ -1054,22 +1237,25 @@ document.getElementById('downloadBtn').addEventListener('click', ()=>{
 
 document.getElementById('restartBtn').addEventListener('click', ()=>{
   QUESTIONS = [];
-  state = { name:'', lastName:'', dob:'', program:'', current:-1, answers:[], stars:0 };
+  state = { name:'', program:'', current:-1, answers:[], stars:0 };
   MAX_STARS = 0;
   shownZones = new Set();
   document.getElementById('starMax').textContent = MAX_STARS;
   nameInput.value = '';
-  lastNameInput.value = '';
-  dobInput.value = '';
   selectedProgram = '';
   document.body.classList.remove('theme-robotics','theme-tech','theme-financial');
   [...programChips.children].forEach(c=>c.classList.remove('selected'));
   zonePips.innerHTML = '';
+  companionCurrentLevel = -1;
+  MAX_STARS = 1;
+  updateCompanionLevel();
+  companionCurrentLevel = -1;
   showScreen('intro');
   updateProgress();
 });
 
 updateProgress();
+updateCompanionLevel();
 </script>
 </body>
 </html>
