@@ -5,31 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Ledo — Mission Survey!</title>
 <style>
-  :root{
-    --bg1:#0d1b2a;
-    --bg2:#132a3f;
-    --panel:#14273d;
-    --panel-light:#1c3a57;
-    --accent:#2f6fed;
+    :root{
+    --bg1:#1a0b3d;
+    --bg2:#2d1b5e;
+    --panel:#241454;
+    --panel-light:#3a2470;
+    --accent:#7b2ff7;
     --accent2:#ffb200;
-    --accent3:#ff6a3d;
-    --pink:#2f6fed;
+    --accent3:#ff3d7f;
+    --pink:#ff3d7f;
     --text:#eaf2ff;
-    --muted:#9fb3c8;
+    --muted:#c3b3e8;
     --good:#3ecf8e;
     --warn:#ff6a3d;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
-  body{
+    body{
     font-family:'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
-    background: radial-gradient(ellipse at top, #16324f 0%, var(--bg1) 55%, #060d16 100%);
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,61,127,0.35), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(123,47,247,0.45), transparent 50%),
+      radial-gradient(circle at 50% 90%, rgba(255,178,0,0.25), transparent 55%),
+      radial-gradient(ellipse at top, #3a2470 0%, var(--bg1) 55%, #0a0420 100%);
+    background-size: 200% 200%;
+    animation: nebulaDrift 18s ease-in-out infinite;
     color:var(--text);
     min-height:100vh;
     overflow-x:hidden;
     position:relative;
   }
-
+  @keyframes nebulaDrift{
+    0%,100%{ background-position: 0% 0%, 100% 0%, 50% 100%, 50% 50%; }
+    50%{ background-position: 20% 30%, 80% 20%, 40% 80%, 50% 50%; }
+  }
   #stars{ position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
 
   .wrap{
@@ -578,12 +587,12 @@ function bank(subject){
     { area:'Cognitive Engagement', text:`I find topics in ${subject} interesting.` },
     { area:'Cognitive Engagement', text:`I look forward to ${subject}.` },
     { area:'Cognitive Engagement', text:`I enjoy learning new things in ${subject}.` },
-    { area:'Cognitive Engagement', text:`I often feel bored during ${subject}.` },
+    { area:'Cognitive Engagement', text:`I oftend dont feel bored during ${subject}.` },
     { area:'Cognitive Engagement', text:`I enjoy being challenged in ${subject}.` },
     // Puzzle Lab — Constructive Coping
     { area:'Constructive Coping', text:`If I don't understand something in ${subject}, I seek help.` },
     { area:'Constructive Coping', text:`If a problem in ${subject} is really difficult, I just work harder.` },
-    { area:'Constructive Coping', text:`When I have a hard ${subject} problem to solve, I give up easily.` },
+    { area:'Constructive Coping', text:`When I have a hard ${subject} problem to solve, I dont give up easily.` },
     { area:'Constructive Coping', text:`Using technology helps me learn science, mathematics or engineering.` },
     { area:'Constructive Coping', text:`If I get stuck, I try something different to solve the problem or complete the task.` },
     // Grow Zone — Growth Mindset
