@@ -5,41 +5,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Ledo — Mission Survey!</title>
 <style>
-    :root{
-    --bg1:#1a0b3d;
-    --bg2:#2d1b5e;
-    --panel:#241454;
-    --panel-light:#3a2470;
-    --accent:#7b2ff7;
+  :root{
+    --bg1:#0d1b2a;
+    --bg2:#132a3f;
+    --panel:#14273d;
+    --panel-light:#1c3a57;
+    --accent:#2f6fed;
     --accent2:#ffb200;
-    --accent3:#ff3d7f;
-    --pink:#ff3d7f;
+    --accent3:#ff6a3d;
+    --pink:#2f6fed;
     --text:#eaf2ff;
-    --muted:#c3b3e8;
+    --muted:#9fb3c8;
     --good:#3ecf8e;
     --warn:#ff6a3d;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
-    body{
+  body{
     font-family:'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
-    background:
-      radial-gradient(circle at 15% 20%, rgba(255,61,127,0.35), transparent 45%),
-      radial-gradient(circle at 85% 15%, rgba(123,47,247,0.45), transparent 50%),
-      radial-gradient(circle at 50% 90%, rgba(255,178,0,0.25), transparent 55%),
-      radial-gradient(ellipse at top, #3a2470 0%, var(--bg1) 55%, #0a0420 100%);
-    background-size: 200% 200%;
-    animation: nebulaDrift 18s ease-in-out infinite;
+    background: radial-gradient(ellipse at top, #16324f 0%, var(--bg1) 55%, #060d16 100%);
     color:var(--text);
     min-height:100vh;
     overflow-x:hidden;
     position:relative;
   }
-  @keyframes nebulaDrift{
-    0%,100%{ background-position: 0% 0%, 100% 0%, 50% 100%, 50% 50%; }
-    50%{ background-position: 20% 30%, 80% 20%, 40% 80%, 50% 50%; }
-  }
+
   #stars{ position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+
+  /* ---- Mission-themed backgrounds (swap in once a chip is picked) ---- */
+  body.theme-robotics{
+    background:
+      repeating-linear-gradient(45deg, rgba(255,178,0,0.05) 0px, rgba(255,178,0,0.05) 2px, transparent 2px, transparent 22px),
+      radial-gradient(ellipse at top, #1f2f22 0%, #10231a 55%, #060d09 100%);
+    animation: gearPulse 10s ease-in-out infinite;
+  }
+  @keyframes gearPulse{
+    0%,100%{ filter:brightness(1); }
+    50%{ filter:brightness(1.12); }
+  }
+  body.theme-tech{
+    background:
+      repeating-linear-gradient(0deg, rgba(47,111,237,0.06) 0px, rgba(47,111,237,0.06) 1px, transparent 1px, transparent 26px),
+      repeating-linear-gradient(90deg, rgba(47,111,237,0.06) 0px, rgba(47,111,237,0.06) 1px, transparent 1px, transparent 26px),
+      radial-gradient(ellipse at top, #142338 0%, #0b1626 55%, #05090f 100%);
+    animation: scanGlow 6s linear infinite;
+  }
+  @keyframes scanGlow{
+    0%{ background-position: 0 0, 0 0, 0 0; }
+    100%{ background-position: 0 260px, 260px 0, 0 0; }
+  }
+  body.theme-financial{
+    background:
+      repeating-linear-gradient(45deg, rgba(30,120,60,0.10) 0px, rgba(30,120,60,0.10) 40px, rgba(20,90,45,0.10) 40px, rgba(20,90,45,0.10) 80px),
+      radial-gradient(ellipse at top, #123320 0%, #0c2317 55%, #051209 100%);
+    animation: goldShimmer 8s ease-in-out infinite;
+  }
+  @keyframes goldShimmer{
+    0%,100%{ filter:brightness(1) saturate(1); }
+    50%{ filter:brightness(1.1) saturate(1.25); }
+  }
 
   .wrap{
     position:relative;
@@ -516,6 +540,8 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbylYsiSYvRNDGigHx75
 async function submitToSheet(state){
   if(!SUBMIT_TO_SHEET) return { skipped:true };
 
+  // One row per answered question (matches the deployed backend's
+  // "rows" format, which also auto-assigns/looks up a Student ID).
   const submittedAt = new Date().toISOString();
   const rows = QUESTIONS.map((q, i)=>({
     student_name: state.name,
@@ -587,12 +613,12 @@ function bank(subject){
     { area:'Cognitive Engagement', text:`I find topics in ${subject} interesting.` },
     { area:'Cognitive Engagement', text:`I look forward to ${subject}.` },
     { area:'Cognitive Engagement', text:`I enjoy learning new things in ${subject}.` },
-    { area:'Cognitive Engagement', text:`I oftend dont feel bored during ${subject}.` },
+    { area:'Cognitive Engagement', text:`I often feel bored during ${subject}.` },
     { area:'Cognitive Engagement', text:`I enjoy being challenged in ${subject}.` },
     // Puzzle Lab — Constructive Coping
     { area:'Constructive Coping', text:`If I don't understand something in ${subject}, I seek help.` },
     { area:'Constructive Coping', text:`If a problem in ${subject} is really difficult, I just work harder.` },
-    { area:'Constructive Coping', text:`When I have a hard ${subject} problem to solve, I dont give up easily.` },
+    { area:'Constructive Coping', text:`When I have a hard ${subject} problem to solve, I give up easily.` },
     { area:'Constructive Coping', text:`Using technology helps me learn science, mathematics or engineering.` },
     { area:'Constructive Coping', text:`If I get stuck, I try something different to solve the problem or complete the task.` },
     // Grow Zone — Growth Mindset
@@ -663,12 +689,20 @@ const footerNote = document.getElementById('footerNote');
 
 /* ---------------- Program chips ---------------- */
 let selectedProgram = '';
+const THEME_CLASS = {
+  'Robotics': 'theme-robotics',
+  'Computer Fundamentals': 'theme-tech',
+  'Financial Literacy': 'theme-financial'
+};
 programChips.addEventListener('click', (e)=>{
   const chip = e.target.closest('.chip');
   if(!chip) return;
   [...programChips.children].forEach(c=>c.classList.remove('selected'));
   chip.classList.add('selected');
   selectedProgram = chip.dataset.val;
+  document.body.classList.remove('theme-robotics','theme-tech','theme-financial');
+  const themeClass = THEME_CLASS[selectedProgram];
+  if(themeClass) document.body.classList.add(themeClass);
   beep(440,0.05);
 });
 
@@ -888,6 +922,7 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
   document.getElementById('starMax').textContent = MAX_STARS;
   nameInput.value = '';
   selectedProgram = '';
+  document.body.classList.remove('theme-robotics','theme-tech','theme-financial');
   [...programChips.children].forEach(c=>c.classList.remove('selected'));
   zonePips.innerHTML = '';
   showScreen('intro');
