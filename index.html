@@ -32,7 +32,6 @@
 
   #stars{ position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
 
-  /* ---- Mission-themed backgrounds (swap in once a chip is picked) ---- */
   body.theme-robotics{
     background:
       repeating-linear-gradient(45deg, rgba(255,178,0,0.16) 0px, rgba(255,178,0,0.16) 3px, transparent 3px, transparent 26px),
@@ -67,7 +66,6 @@
     50%{ filter:brightness(1.3) saturate(1.4); }
   }
 
-  /* ---- Animated mission scenery (moving icons per theme) ---- */
   #themeBg{
     position:fixed;
     inset:0;
@@ -158,7 +156,6 @@
     flex-direction:column;
   }
 
-  /* HUD */
   .hud{
     display:flex;
     align-items:center;
@@ -204,7 +201,6 @@
   }
   .coin-counter.pop{ animation: scorePop .3s cubic-bezier(.3,1.8,.4,1); }
 
-  /* progress track = rocket path */
   .track-outer{
     position:relative;
     height:34px;
@@ -238,7 +234,6 @@
     margin-bottom:16px;
   }
 
-  /* zone pips — styled like Mario World map nodes on a dotted trail */
   .zone-pips{
     display:flex;
     justify-content:center;
@@ -291,7 +286,6 @@
     color:var(--muted);
     opacity:0.7;
   }
-  /* little runner that hops along the world-map trail above the pips */
   .trail-walker{
     position:absolute;
     top:-22px;
@@ -303,7 +297,6 @@
     pointer-events:none;
   }
 
-  /* flying coin pop — spawned on each answered question */
   .coin-pop{
     position:fixed;
     z-index:999;
@@ -317,7 +310,6 @@
     100%{ transform:translateY(-80px) scale(0.9) rotateY(540deg); opacity:0; }
   }
 
-  /* score counter pop when the star total ticks up */
   .stars-count.pop{ animation: scorePop .3s cubic-bezier(.3,1.8,.4,1); }
   @keyframes scorePop{
     0%{ transform:scale(1); }
@@ -325,7 +317,6 @@
     100%{ transform:scale(1); }
   }
 
-  /* card */
   .card{
     background:linear-gradient(160deg, var(--panel), var(--panel-light));
     border-radius:24px;
@@ -376,7 +367,6 @@
   }
   .hop{ animation: hopUp .38s cubic-bezier(.3,1.6,.4,1); }
 
-  /* intro */
   .mega-bot{ font-size:5rem; animation:float 3s ease-in-out infinite; filter:drop-shadow(0 0 20px var(--accent)); }
   @keyframes float{ 0%,100%{ transform:translateY(0) rotate(-3deg);} 50%{ transform:translateY(-14px) rotate(3deg);} }
   h1{ font-size:1.7rem; margin:4px 0 0; background:linear-gradient(90deg,var(--accent2),var(--pink)); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -443,14 +433,12 @@
   }
   .btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
 
-  /* zone transition */
   .zone-emoji{ font-size:4.4rem; animation:float 2.6s ease-in-out infinite; }
   .zone-kicker{ font-size:0.8rem; font-weight:800; color:var(--accent2); text-transform:uppercase; letter-spacing:1.5px; }
   .zone-title{ font-size:1.5rem; font-weight:900; margin:2px 0 0; }
   .zone-tagline{ color:var(--muted); font-size:0.95rem; max-width:420px; }
   .zone-count{ font-size:0.8rem; color:var(--muted); }
 
-  /* question screen */
   .q-index{
     font-size:0.8rem;
     font-weight:800;
@@ -507,7 +495,6 @@
     min-height:20px;
   }
 
-  /* finale */
   .certificate{
     background:linear-gradient(160deg,#fff7e6,#ffe9c2);
     color:#432c00;
@@ -560,6 +547,7 @@
     user-select:none;
     -webkit-tap-highlight-color:transparent;
     will-change:left, top;
+    pointer-events:none; /* never block clicks/typing on what's underneath it */
   }
   .companion.picking .companion-avatar{
     border-color:var(--accent2);
@@ -1020,7 +1008,6 @@ function animateStarCount(newVal){
   document.querySelector('.stars-count').classList.add('pop');
 }
 
-// One coin per answered question — a running total shown in the HUD.
 function addCoin(){
   state.coins++;
   coinTotalEl.textContent = state.coins;
@@ -1037,9 +1024,6 @@ function bigConfetti(){
   }
 }
 
-/* ================================================================
-   GOOGLE SHEETS SUBMISSION CONFIG
-   ================================================================ */
 const SUBMIT_TO_SHEET = true;
 
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbylYsiSYvRNDGigHx75grYnIlDBV5gv7lzhXmRigoa7vlCB1wr7ysR4UjQ1MRIMkIj3/exec";
@@ -1071,7 +1055,6 @@ async function submitToSheet(state){
   return data;
 }
 
-/* ---------------- Zone (Area) metadata — one themed emoji set per mission ---------------- */
 function makeZones(emojis){
   const meta = [
     { area:'Learner Identity',              title:'Launch Pad',        tagline:'Who are you as a learner?' },
@@ -1095,7 +1078,6 @@ const ZONES_BY_PROGRAM = {
 let ZONES = ZONES_BY_PROGRAM['Robotics'];
 function zoneFor(area){ return ZONES.find(z=>z.area===area); }
 
-/* ---------------- Question banks (from the CSVs, one set per mission) ---------------- */
 function bank(subject){
   return [
     { area:'Learner Identity', text:`I can succeed in situations that involve understanding ${subject}.` },
@@ -1154,7 +1136,6 @@ const SCALE = [
 
 const STREAK_MSGS = ['Nice! ⭐','Great job! 🌟','You\'re on a roll! 🔥','Awesome! 🚀','Super star! ✨'];
 
-/* ---------------- State ---------------- */
 let state = {
   name: '',
   program: '',
@@ -1166,7 +1147,6 @@ let state = {
 let MAX_STARS = 0;
 let shownZones = new Set();
 
-/* ---------------- Elements ---------------- */
 const screens = {
   intro: document.getElementById('screen-intro'),
   zone: document.getElementById('screen-zone'),
@@ -1201,7 +1181,6 @@ const heroLine = document.getElementById('heroLine');
 const coinTotalEl = document.getElementById('coinTotal');
 const coinCounter = document.getElementById('coinCounter');
 
-/* ---------------- Companion (leveling-up sidekick) ---------------- */
 const companion = document.getElementById('companion');
 const companionChar = document.getElementById('companionChar');
 const companionAccessory = document.getElementById('companionAccessory');
@@ -1231,8 +1210,6 @@ function companionBounce(){
   companion.classList.add('bounce');
 }
 
-// ---- Cursor-following companion — he trails your mouse the whole time,
-// like he's the one steering toward whichever answer you're about to pick.
 let mouseX = window.innerWidth - 80, mouseY = window.innerHeight - 80;
 let compX = mouseX, compY = mouseY;
 const COMPANION_OFFSET_X = -26;
@@ -1294,13 +1271,17 @@ function heroDeliverCertificate(cb){
   }, 1500);
 }
 
-companion.addEventListener('click', ()=>{
-  companionBounce();
-  companionSpeak(COMPANION_LINES[Math.floor(Math.random()*COMPANION_LINES.length)]);
-  beep(500 + Math.random()*300, 0.08, 'triangle');
-});
+// The companion is click-through now (pointer-events:none) so it never
+// blocks clicks/typing on whatever it happens to be hovering over. In
+// place of "tap him to react," he chimes in occasionally on his own.
+setInterval(()=>{
+  if(document.hidden) return;
+  if(Math.random() < 0.15){
+    companionBounce();
+    companionSpeak(COMPANION_LINES[Math.floor(Math.random()*COMPANION_LINES.length)]);
+  }
+}, 9000);
 
-/* ---------------- Program chips ---------------- */
 let selectedProgram = '';
 const THEME_CLASS = {
   'Robotics': 'theme-robotics',
@@ -1319,7 +1300,6 @@ programChips.addEventListener('click', (e)=>{
   beep(440,0.05);
 });
 
-/* ---------------- Navigation ---------------- */
 function showScreen(name){
   Object.values(screens).forEach(s=>s.classList.remove('active'));
   screens[name].classList.add('active');
@@ -1538,7 +1518,6 @@ function finishMission(){
   });
 }
 
-/* ---------------- Download answers as CSV ---------------- */
 document.getElementById('downloadBtn').addEventListener('click', ()=>{
   const headers = ['Name','Program', ...QUESTIONS.map(q=>`${q.text} [${q.area}]`)];
   const row = [state.name, state.program, ...state.answers];
