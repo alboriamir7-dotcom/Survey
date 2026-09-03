@@ -1017,8 +1017,18 @@
       <p class="subtitle">Time to go on a mission! Answer questions about how YOU feel as you travel through 8 zones, earn stars for every one you finish, and unlock your very own certificate at the end. There are no wrong answers — just be you! 🛠️✨</p>
 
       <div class="field">
-        <label for="nameInput">✍️ What's your name?</label>
-        <input type="text" id="nameInput" placeholder="Type your name here...">
+        <label for="firstNameInput">✍️ First name</label>
+        <input type="text" id="firstNameInput" placeholder="Type your first name...">
+      </div>
+
+      <div class="field">
+        <label for="lastNameInput">✍️ Last name</label>
+        <input type="text" id="lastNameInput" placeholder="Type your last name...">
+      </div>
+
+      <div class="field">
+        <label for="dobInput">🎂 Date of birth</label>
+        <input type="date" id="dobInput">
       </div>
 
       <div class="field">
@@ -1264,26 +1274,27 @@ function bigConfetti(){
    finished survey sends one row per answered question to the sheet.
    ================================================================ */
 const SUBMIT_TO_SHEET = true; // flip to true once WEB_APP_URL is set
- const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby68Fzw_firxZOAOBvhmzfSTdWUdElBL9N1v9ZTSJ5iZpAWGKQCR2sDo9onAGHd2YOsGw/exec";
+ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyWotJwLupfpba2ZEyx9QrWGxSWDR4j2rHB3zdvAkHAiykzIc2SL9oC8aeb3u-xOk5u/exec";
 async function submitToSheet(state){
   if(!SUBMIT_TO_SHEET) return { skipped:true };
 
-  // One row per answered question (matches the deployed backend's
-  // "rows" format, which also auto-assigns/looks up a Student ID).
+  // One wide row per finished survey: First name, Last name, D.O.B,
+  // Program, then one answer per question in QUESTIONS order — matches
+  // the "Raw responses" tab columns in the linked Google Sheet.
   const submittedAt = new Date().toISOString();
-  const rows = QUESTIONS.map((q, i)=>({
-    student_name: state.name,
+  const row = {
+    first_name: state.firstName,
+    last_name: state.lastName,
+    dob: state.dob,
     program: state.program,
-    zone_area: q.area,
-    question: q.text,
-    answer: state.answers[i],
+    answers: state.answers,
     submitted_at: submittedAt
-  }));
+  };
 
   const res = await fetch(WEB_APP_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight on Apps Script
-    body: JSON.stringify({ rows })
+    body: JSON.stringify(row)
   });
   const data = await res.json();
 
@@ -1418,6 +1429,9 @@ function checkMilestone(){
 
 /* ---------------- State ---------------- */
 let state = {
+  firstName: '',
+  lastName: '',
+  dob: '',
   name: '',
   program: '',
   current: -1, // -1 = intro
@@ -1435,7 +1449,9 @@ const screens = {
   question: document.getElementById('screen-question'),
   finale: document.getElementById('screen-finale')
 };
-const nameInput = document.getElementById('nameInput');
+const firstNameInput = document.getElementById('firstNameInput');
+const lastNameInput = document.getElementById('lastNameInput');
+const dobInput = document.getElementById('dobInput');
 const programChips = document.getElementById('programChips');
 const startBtn = document.getElementById('startBtn');
 const zoneEmoji = document.getElementById('zoneEmoji');
@@ -1656,14 +1672,21 @@ function updateProgress(){
 }
 
 startBtn.addEventListener('click', ()=>{
-  const nm = nameInput.value.trim();
-  if(!nm){ nameInput.style.borderColor = '#ff6b6b'; nameInput.focus(); return; }
+  const fn = firstNameInput.value.trim();
+  const ln = lastNameInput.value.trim();
+  const dob = dobInput.value;
+  if(!fn){ firstNameInput.style.borderColor = '#ff6b6b'; firstNameInput.focus(); return; }
+  if(!ln){ lastNameInput.style.borderColor = '#ff6b6b'; lastNameInput.focus(); return; }
+  if(!dob){ dobInput.style.borderColor = '#ff6b6b'; dobInput.focus(); return; }
   if(!selectedProgram){
     programChips.style.outline = '2px solid #ff6b6b';
     setTimeout(()=>programChips.style.outline='', 900);
     return;
   }
-  state.name = nm;
+  state.firstName = fn;
+  state.lastName = ln;
+  state.dob = dob;
+  state.name = `${fn} ${ln}`.trim();
   state.program = selectedProgram;
   ZONES = ZONES_BY_PROGRAM[selectedProgram];
 
@@ -1820,8 +1843,8 @@ function finishMission(){
 
 /* ---------------- Download answers as CSV ---------------- */
 document.getElementById('downloadBtn').addEventListener('click', ()=>{
-  const headers = ['Name','Program', ...QUESTIONS.map(q=>`${q.text} [${q.area}]`)];
-  const row = [state.name, state.program, ...state.answers];
+  const headers = ['First name','Last name','D.O.B','Program', ...QUESTIONS.map(q=>`${q.text} [${q.area}]`)];
+  const row = [state.firstName, state.lastName, state.dob, state.program, ...state.answers];
   const esc = (v)=>`"${String(v).replace(/"/g,'""')}"`;
   const csv = headers.map(esc).join(',') + '\n' + row.map(esc).join(',');
   const blob = new Blob([csv], {type:'text/csv'});
@@ -1837,7 +1860,7 @@ document.getElementById('downloadBtn').addEventListener('click', ()=>{
 
 document.getElementById('restartBtn').addEventListener('click', ()=>{
   QUESTIONS = [];
-  state = { name:'', program:'', current:-1, answers:[], stars:0, coins:0 };
+  state = { firstName:'', lastName:'', dob:'', name:'', program:'', current:-1, answers:[], stars:0, coins:0 };
   coinTotalEl.textContent = 0;
   milestonesHit = {};
   milestoneBanner.classList.remove('show');
@@ -1845,7 +1868,9 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
   starDisplayVal = 0;
   shownZones = new Set();
   document.getElementById('starMax').textContent = MAX_STARS;
-  nameInput.value = '';
+  firstNameInput.value = '';
+  lastNameInput.value = '';
+  dobInput.value = '';
   selectedProgram = '';
   document.body.classList.remove('theme-robotics','theme-tech','theme-financial');
   [...programChips.children].forEach(c=>c.classList.remove('selected'));
