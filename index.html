@@ -1273,8 +1273,8 @@ function bigConfetti(){
    Web app, "Anyone" access) and set SUBMIT_TO_SHEET = true. Every
    finished survey sends one row per answered question to the sheet.
    ================================================================ */
-const SUBMIT_TO_SHEET = true; // flip to true once WEB_APP_URL is set
- const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyWotJwLupfpba2ZEyx9QrWGxSWDR4j2rHB3zdvAkHAiykzIc2SL9oC8aeb3u-xOk5u/exec";
+const SUBMIT_TO_SHEET = false; // this site is unlinked from the Google Sheet — LedoSurvey is now the connected one
+ const WEB_APP_URL = "";
 async function submitToSheet(state){
   if(!SUBMIT_TO_SHEET) return { skipped:true };
 
